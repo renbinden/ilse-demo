@@ -1,0 +1,2 @@
+Put a GitHub personal access token in this file, with access to "read:packages":
+https://github.com/settings/tokens/new
