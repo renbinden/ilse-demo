@@ -23,10 +23,11 @@ import uk.co.renbinden.ilse.input.mapping.XBoxOneGamepad.Button.A
 import kotlin.browser.document
 
 
+@ExperimentalUnsignedTypes
 @ExperimentalStdlibApi
-class DemoScreen : Screen(
+class DemoScreen(private val assets: Assets) : Screen(
     engine {
-        add(ControlSystem())
+        add(ControlSystem(assets))
         add(AccelerationSystem())
         add(CollisionSystem())
         add(VelocitySystem())
@@ -40,24 +41,18 @@ class DemoScreen : Screen(
     var debug = false
 
     init {
-        loadLevel(Assets.Maps.level1) { obj, x, y ->
-            when (obj) {
-                'b' -> {
-                    engine.add(entity {
-                        add(Position(x, y))
-                        add(Dimensions(32.0, 32.0))
-                        add(Image(Assets.Images.block))
-                        add(Collider(RectangleCollider(
-                            get(Position)::x,
-                            get(Position)::y,
-                            get(Dimensions)::width,
-                            get(Dimensions)::height
-                        )))
-                    })
+        engine.loadLevel(
+            assets.maps.demoLevel,
+            { imageSource ->
+                when (imageSource) {
+                    "../images/block.png" -> assets.images.block
+                    else -> null
                 }
-                'P' -> {
-                    engine.add(entity {
-                        add(Position(x, y, 0.0, 768.0, 0.0, 568.0))
+            },
+            { obj ->
+                when (obj.type) {
+                    "player" -> entity {
+                        add(Position(obj.x, obj.y, 0.0, 768.0, 0.0, 568.0))
                         add(Velocity(0.0, 0.0, 240.0, 720.0))
                         add(Acceleration(0.0, 320.0, 0.0, 32.0))
                         add(Dimensions(32.0, 32.0))
@@ -67,7 +62,7 @@ class DemoScreen : Screen(
                             get(Dimensions)::width,
                             get(Dimensions)::height
                         )))
-                        add(Animation(Assets.Animations.catWalkRight, 0.5))
+                        add(Animation(assets.animations.catWalkRight, 0.5))
                         add(
                             Controls(
                                 leftKey = ARROW_LEFT,
@@ -80,14 +75,25 @@ class DemoScreen : Screen(
                                 gamepadJumpButton = A
                             )
                         )
-                    })
+                    }
+                    "block" -> entity {
+                        add(Position(obj.x, obj.y))
+                        add(Dimensions(obj.width, obj.height))
+                        add(Collider(RectangleCollider(
+                            get(Position)::x,
+                            get(Position)::y,
+                            get(Dimensions)::width,
+                            get(Dimensions)::height
+                        )))
+                    }
+                    else -> null
                 }
             }
-        }
+        )
 
         Events.addListener(KeyDownEvent::class) { event ->
             when (event.keyCode) {
-                SPACE -> Assets.Sounds.coins.play()
+                SPACE -> assets.sounds.coins.play()
                 BACKTICK -> {
                     debug = !debug
                 }

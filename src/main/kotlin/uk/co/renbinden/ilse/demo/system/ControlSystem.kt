@@ -7,7 +7,7 @@ import uk.co.renbinden.ilse.ecs.system.IteratingSystem
 import uk.co.renbinden.ilse.input.Input
 
 
-class ControlSystem : IteratingSystem({
+class ControlSystem(private val assets: Assets) : IteratingSystem({
     it.has(Controls)
             && it.has(Position)
             && it.has(Velocity)
@@ -30,17 +30,17 @@ class ControlSystem : IteratingSystem({
         if (Input.isKeyPressed(controls.leftKey)
             || (Input.gamepads.isNotEmpty() && (controls.gamepadHorizontalAxes.any { Input.gamepads[0].getAxisValue(it) < -0.3 }))) {
             velocity.dx -= 240.0
-            if (entity.has(Animation) && entity[Animation].asset == Assets.Animations.catWalkRight) {
+            if (entity.has(Animation) && entity[Animation].asset == assets.animations.catWalkRight) {
                 entity.remove(Animation)
-                entity.add(Animation(Assets.Animations.catWalkLeft, 0.5))
+                entity.add(Animation(assets.animations.catWalkLeft, 0.5))
             }
         }
         if (Input.isKeyPressed(controls.rightKey)
             || (Input.gamepads.isNotEmpty() && (controls.gamepadHorizontalAxes.any { Input.gamepads[0].getAxisValue(it) > 0.3 }))) {
             velocity.dx += 240.0
-            if (entity.has(Animation) && entity[Animation].asset == Assets.Animations.catWalkLeft) {
+            if (entity.has(Animation) && entity[Animation].asset == assets.animations.catWalkLeft) {
                 entity.remove(Animation)
-                entity.add(Animation(Assets.Animations.catWalkRight, 0.5))
+                entity.add(Animation(assets.animations.catWalkRight, 0.5))
             }
         }
     }

@@ -1,22 +1,62 @@
 package uk.co.renbinden.ilse.demo.level
 
+import uk.co.renbinden.ilse.asset.ImageAsset
 import uk.co.renbinden.ilse.asset.TextAsset
 import uk.co.renbinden.ilse.asset.event.AssetLoadEvent
+import uk.co.renbinden.ilse.demo.component.Image
+import uk.co.renbinden.ilse.demo.component.Position
+import uk.co.renbinden.ilse.ecs.Engine
+import uk.co.renbinden.ilse.ecs.entity.Entity
+import uk.co.renbinden.ilse.ecs.entity.entity
 import uk.co.renbinden.ilse.event.Events
+import uk.co.renbinden.ilse.tiled.Object
+import uk.co.renbinden.ilse.tiled.TiledMapLoader
 
+@ExperimentalUnsignedTypes
 @ExperimentalStdlibApi
-fun loadLevel(map: TextAsset, gridSize: Double = 32.0, loadEntity: (Char, Double, Double) -> Unit) {
+fun Engine.loadLevel(map: TextAsset, getTileSetImage: (String) -> ImageAsset?, loadEntity: (Object) -> Entity?) {
     Events.addListener(AssetLoadEvent::class) { event ->
         if (event.asset == map) {
-            var x = 0.0
-            var y = 0.0
-            map.text.split("\n").forEach { row ->
-                row.toCharArray().forEach { obj ->
-                    loadEntity(obj, x, y)
-                    x += gridSize
+            val tiledMap = TiledMapLoader.loadMap(map) ?: return@addListener
+            tiledMap.layers.forEach { layer ->
+                layer.data.tiles.chunked(tiledMap.width).forEachIndexed { y, col ->
+                    col.forEachIndexed { x, tileInstance ->
+                        add(entity {
+                            if (tileInstance != null) {
+                                val tileSet = tiledMap.getTileSet(tileInstance)
+                                val tileSetColumns = tileSet.columns
+                                val tileSetSource = tileSet.image?.source
+                                if (tileSetSource != null) {
+                                    val image = getTileSetImage(tileSetSource)
+                                    if (image != null && tileSetColumns != null) {
+                                        add(
+                                            Image(
+                                                image,
+                                                sourceX = (tileInstance.gid - tileSet.firstGid).rem(tileSetColumns) * tileSet.tileWidth,
+                                                sourceY = (tileInstance.gid - tileSet.firstGid).div(tileSetColumns) * tileSet.tileHeight,
+                                                sourceWidth = tileSet.tileWidth,
+                                                sourceHeight = tileSet.tileHeight,
+                                                destWidth = tileSet.tileWidth,
+                                                destHeight = tileSet.tileHeight
+                                            )
+                                        )
+                                    }
+                                }
+
+                                add(Position((x * tileSet.tileWidth).toDouble(), (y * tileSet.tileHeight).toDouble()))
+                            }
+                        })
+                    }
                 }
-                x = 0.0
-                y += gridSize
+            }
+
+            tiledMap.objectGroups.forEach { objectGroup ->
+                objectGroup.objects.forEach { obj ->
+                    val entity = loadEntity(obj)
+                    if (entity != null) {
+                        add(entity)
+                    }
+                }
             }
         }
     }

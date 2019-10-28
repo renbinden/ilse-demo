@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" tiledversion="1.0.3" orientation="orthogonal" renderorder="right-down" width="20" height="15" tilewidth="32" tileheight="32" nextobjectid="8">
+ <tileset firstgid="1" name="block" tilewidth="32" tileheight="32" tilecount="1" columns="1">
+  <image source="../images/block.png" width="32" height="32"/>
+ </tileset>
+ <layer name="Tile Layer 1" width="20" height="15">
+  <data encoding="csv">
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+</data>
+ </layer>
+ <objectgroup name="Object Layer 1">
+  <object id="1" type="player" x="416" y="384" width="32" height="32"/>
+  <object id="2" type="block" x="0" y="448" width="640" height="32"/>
+  <object id="3" type="block" x="0" y="0" width="640" height="32"/>
+  <object id="4" type="block" x="0" y="32" width="32" height="416"/>
+  <object id="5" type="block" x="608" y="32" width="32" height="416"/>
+  <object id="6" type="block" x="128" y="416" width="96" height="32"/>
+  <object id="7" type="block" x="160" y="384" width="32" height="32"/>
+ </objectgroup>
+</map>

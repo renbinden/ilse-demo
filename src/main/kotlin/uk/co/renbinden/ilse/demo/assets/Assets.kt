@@ -6,23 +6,28 @@ import uk.co.renbinden.ilse.asset.SoundAsset
 import uk.co.renbinden.ilse.asset.TextAsset
 
 
-object Assets {
+class Assets {
 
-    object Sounds {
+    inner class Sounds {
         val coins = SoundAsset("static/sounds/coin.wav")
     }
 
-    object Images {
+    inner class Images {
         val block = ImageAsset("static/images/block.png")
     }
 
-    object Animations {
+    inner class Animations {
         val catWalkRight = AnimationAsset("static/images/cat_walk_right.png", 32, 32)
         val catWalkLeft = AnimationAsset("static/images/cat_walk_left.png", 32, 32)
     }
 
-    object Maps {
-        val level1 = TextAsset("static/levels/test_level.txt")
+    inner class Maps {
+        val demoLevel = TextAsset("static/levels/demo_level.tmx")
     }
+
+    val sounds = Sounds()
+    val images = Images()
+    val animations = Animations()
+    val maps = Maps()
 
 }
