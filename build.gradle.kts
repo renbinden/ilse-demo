@@ -11,7 +11,7 @@ repositories {
         url = uri("https://maven.pkg.github.com/alyphen/ilse")
         credentials {
             username = "alyphen"
-            password = file("$rootDir/github_token.txt").readLines()[0]
+            password = file("$projectDir/github_token.txt").readLines()[0]
         }
     }
 }
