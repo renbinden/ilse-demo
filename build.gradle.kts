@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.kotlin.js") version "1.3.50"
+    id("org.jetbrains.kotlin.js") version "1.3.61"
 }
 
 group = "uk.co.renbinden"
@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-js")
-    implementation(group = "uk.co.renbinden", name = "ilse", version = "1.2.4")
+    implementation(project(":ilse"))
     testCompile(group = "junit", name = "junit", version = "4.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test-js")
 }
