@@ -91,7 +91,9 @@ class DemoScreen(private val assets: Assets) : Screen(
             }
         )
 
-        Events.addListener(KeyDownEvent::class) { event ->
+        // Careful if you have multiple screens
+        // Event listeners persist across screens and must be removed if no longer relevant.
+        Events.addListener(KeyDownEvent) { event ->
             when (event.keyCode) {
                 SPACE -> assets.sounds.coins.play()
                 BACKTICK -> {

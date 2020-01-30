@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.kotlin.js") version "1.3.61"
+    kotlin("js") version "1.3.61"
 }
 
 group = "uk.co.renbinden"
@@ -23,4 +23,4 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-js")
 }
 
-kotlin.target.browser { }
+kotlin.target.browser.webpackTask { }
