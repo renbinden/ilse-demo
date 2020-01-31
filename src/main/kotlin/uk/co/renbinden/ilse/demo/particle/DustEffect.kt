@@ -31,7 +31,7 @@ class DustEffect(val assets: Assets, val canvas: HTMLCanvasElement, var x: Doubl
                     currentX = ((x * (1.0 - progress)) + (targetX * progress))
                     currentY = ((y * (1.0 - progress)) + (targetY * progress))
                 },
-                onRender = { dt ->
+                onRender = {
                     ctx.drawImage(assets.images.dustParticle.image, currentX, currentY)
                 }
             )

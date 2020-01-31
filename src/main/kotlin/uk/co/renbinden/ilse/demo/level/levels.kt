@@ -20,7 +20,7 @@ class LevelLoadListener(
     map: TextAsset,
     getTileSetImage: (String) -> ImageAsset?,
     loadEntity: (Object) -> Entity?
-) : Listener<AssetLoadEvent>(handler@{ event ->
+) : Listener<AssetLoadEvent>(handler@{
     val tiledMap = TiledMapLoader.loadMap(map) ?: return@handler
     tiledMap.layers.forEach { layer ->
         layer.data.tiles.chunked(tiledMap.width).forEachIndexed { y, col ->
