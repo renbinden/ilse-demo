@@ -1,9 +1,6 @@
 package uk.co.renbinden.ilse.demo.system
 
-import uk.co.renbinden.ilse.demo.component.Collider
-import uk.co.renbinden.ilse.demo.component.Dimensions
-import uk.co.renbinden.ilse.demo.component.Position
-import uk.co.renbinden.ilse.demo.component.Velocity
+import uk.co.renbinden.ilse.demo.component.*
 import uk.co.renbinden.ilse.ecs.entity.Entity
 import uk.co.renbinden.ilse.ecs.system.IteratingSystem
 
@@ -25,8 +22,11 @@ class CollisionSystem : IteratingSystem({
         if (collider.collider.test(x = position.x + (velocity.dx * dt)).resolveHorizontal(entities))
             velocity.dx = 0.0
 
-        if (collider.collider.test(y = position.y + (velocity.dy * dt)).resolveVertical(entities))
+        if (collider.collider.test(y = position.y + (velocity.dy * dt)).resolveVertical(entities)) {
             velocity.dy = 0.0
+        } else {
+            if (!entity.has(JumpedSinceLastCollision)) entity.add(JumpedSinceLastCollision())
+        }
     }
 
 }

@@ -4,9 +4,11 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import uk.co.renbinden.ilse.app.screen.Screen
 import uk.co.renbinden.ilse.collision.RectangleCollider
+import uk.co.renbinden.ilse.collision.event.VerticalCollisionEvent
 import uk.co.renbinden.ilse.demo.assets.Assets
 import uk.co.renbinden.ilse.demo.component.*
 import uk.co.renbinden.ilse.demo.level.loadLevel
+import uk.co.renbinden.ilse.demo.particle.DustEffect
 import uk.co.renbinden.ilse.demo.system.*
 import uk.co.renbinden.ilse.ecs.engine
 import uk.co.renbinden.ilse.ecs.entity.entity
@@ -32,6 +34,7 @@ class DemoScreen(private val assets: Assets) : Screen(
         add(CollisionSystem())
         add(VelocitySystem())
         add(AnimationSystem())
+        add(ParticleSystemSystem())
     }
 ) {
 
@@ -51,30 +54,49 @@ class DemoScreen(private val assets: Assets) : Screen(
             },
             { obj ->
                 when (obj.type) {
-                    "player" -> entity {
-                        add(Position(obj.x, obj.y, 0.0, 768.0, 0.0, 568.0))
-                        add(Velocity(0.0, 0.0, 240.0, 720.0))
-                        add(Acceleration(0.0, 320.0, 0.0, 32.0))
-                        add(Dimensions(32.0, 32.0))
-                        add(Collider(RectangleCollider(
-                            get(Position)::x,
-                            get(Position)::y,
-                            get(Dimensions)::width,
-                            get(Dimensions)::height
-                        )))
-                        add(Animation(assets.animations.catWalkRight, 0.5))
-                        add(
-                            Controls(
-                                leftKey = ARROW_LEFT,
-                                rightKey = ARROW_RIGHT,
-                                jumpKey = ARROW_UP,
-                                gamepadHorizontalAxes = arrayOf(
-                                    LEFT_STICK_HORIZONTAL_AXIS,
-                                    DPAD_HORIZONTAL_AXIS
-                                ),
-                                gamepadJumpButton = A
+                    "player" -> {
+                        val player = entity {
+                            add(Position(obj.x, obj.y, 0.0, 768.0, 0.0, 568.0))
+                            add(Velocity(0.0, 0.0, 240.0, 720.0))
+                            add(Acceleration(0.0, 320.0, 0.0, 32.0))
+                            add(Dimensions(32.0, 32.0))
+                            add(Collider(RectangleCollider(
+                                get(Position)::x,
+                                get(Position)::y,
+                                get(Dimensions)::width,
+                                get(Dimensions)::height
+                            )))
+                            add(Animation(assets.animations.catWalkRight, 0.5))
+                            add(
+                                Controls(
+                                    leftKey = ARROW_LEFT,
+                                    rightKey = ARROW_RIGHT,
+                                    jumpKey = ARROW_UP,
+                                    gamepadHorizontalAxes = arrayOf(
+                                        LEFT_STICK_HORIZONTAL_AXIS,
+                                        DPAD_HORIZONTAL_AXIS
+                                    ),
+                                    gamepadJumpButton = A
+                                )
                             )
-                        )
+                            add(JumpedSinceLastCollision())
+                        }
+                        Events.addListener(VerticalCollisionEvent, { event -> event.collider == player[Collider].collider }) {
+                            if (!player.has(Effect) && player.has(JumpedSinceLastCollision)) {
+                                player.add(
+                                    Effect(
+                                        DustEffect(
+                                            assets,
+                                            canvas,
+                                            player[Position].x + 16,
+                                            player[Position].y + 32
+                                        )
+                                    )
+                                )
+                                player.remove(JumpedSinceLastCollision)
+                            }
+                        }
+                        player
                     }
                     "block" -> entity {
                         add(Position(obj.x, obj.y))
@@ -125,6 +147,13 @@ class DemoScreen(private val assets: Assets) : Screen(
                 if (animation.asset.isLoaded) {
                     animation.asset.drawFrame(animation.getFrame(), ctx, position.x, position.y)
                 }
+            }
+
+        engine.entities
+            .filter { entity -> entity.has(Effect) }
+            .forEach { entity ->
+                val particleComponent = entity[Effect]
+                particleComponent.particleEffect.onRender(dt)
             }
 
         if (debug) {

@@ -14,6 +14,7 @@ class Assets {
 
     inner class Images {
         val block = ImageAsset("static/images/block.png")
+        val dustParticle = ImageAsset("static/images/particle_dust.png")
     }
 
     inner class Animations {
