@@ -3,25 +3,25 @@ package uk.co.renbinden.ilse.demo.screen
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import uk.co.renbinden.ilse.app.screen.Screen
-import uk.co.renbinden.ilse.collision.RectangleCollider
-import uk.co.renbinden.ilse.collision.event.VerticalCollisionEvent
+import uk.co.renbinden.ilse.demo.archetype.Block
+import uk.co.renbinden.ilse.demo.archetype.Player
+import uk.co.renbinden.ilse.demo.archetype.RemotePlayer
 import uk.co.renbinden.ilse.demo.assets.Assets
 import uk.co.renbinden.ilse.demo.component.*
 import uk.co.renbinden.ilse.demo.level.loadLevel
-import uk.co.renbinden.ilse.demo.particle.DustEffect
+import uk.co.renbinden.ilse.demo.net.ClientboundPacketDeserializer
+import uk.co.renbinden.ilse.demo.net.packet.clientbound.ClientboundJoinPacket
+import uk.co.renbinden.ilse.demo.net.packet.clientbound.ClientboundLeavePacket
+import uk.co.renbinden.ilse.demo.net.packet.clientbound.ClientboundMovePacket
 import uk.co.renbinden.ilse.demo.system.*
 import uk.co.renbinden.ilse.ecs.engine
-import uk.co.renbinden.ilse.ecs.entity.entity
 import uk.co.renbinden.ilse.event.Events
 import uk.co.renbinden.ilse.input.event.KeyDownEvent
-import uk.co.renbinden.ilse.input.mapping.Keyboard.ARROW_LEFT
-import uk.co.renbinden.ilse.input.mapping.Keyboard.ARROW_RIGHT
-import uk.co.renbinden.ilse.input.mapping.Keyboard.ARROW_UP
 import uk.co.renbinden.ilse.input.mapping.Keyboard.BACKTICK
 import uk.co.renbinden.ilse.input.mapping.Keyboard.SPACE
-import uk.co.renbinden.ilse.input.mapping.XBoxOneGamepad.Axis.DPAD_HORIZONTAL_AXIS
-import uk.co.renbinden.ilse.input.mapping.XBoxOneGamepad.Axis.LEFT_STICK_HORIZONTAL_AXIS
-import uk.co.renbinden.ilse.input.mapping.XBoxOneGamepad.Button.A
+import uk.co.renbinden.ilse.net.ClientboundPacket
+import uk.co.renbinden.ilse.net.Server
+import uk.co.renbinden.ilse.net.event.PacketReceivedEvent
 import kotlin.browser.document
 
 
@@ -32,7 +32,6 @@ class DemoScreen(private val assets: Assets) : Screen(
         add(ControlSystem(assets))
         add(AccelerationSystem())
         add(CollisionSystem())
-        add(VelocitySystem())
         add(AnimationSystem())
         add(ParticleSystemSystem())
     }
@@ -41,9 +40,12 @@ class DemoScreen(private val assets: Assets) : Screen(
     val canvas = document.getElementById("canvas") as HTMLCanvasElement
     val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
 
+    val server = Server("ws://localhost:9000")
+
     var debug = false
 
     init {
+        engine.add(VelocitySystem(server))
         engine.loadLevel(
             assets.maps.demoLevel,
             { imageSource ->
@@ -54,60 +56,8 @@ class DemoScreen(private val assets: Assets) : Screen(
             },
             { obj ->
                 when (obj.type) {
-                    "player" -> {
-                        val player = entity {
-                            add(Position(obj.x, obj.y, 0.0, 768.0, 0.0, 568.0))
-                            add(Velocity(0.0, 0.0, 240.0, 720.0))
-                            add(Acceleration(0.0, 320.0, 0.0, 32.0))
-                            add(Dimensions(32.0, 32.0))
-                            add(Collider(RectangleCollider(
-                                get(Position)::x,
-                                get(Position)::y,
-                                get(Dimensions)::width,
-                                get(Dimensions)::height
-                            )))
-                            add(Animation(assets.animations.catWalkRight, 0.5))
-                            add(
-                                Controls(
-                                    leftKey = ARROW_LEFT,
-                                    rightKey = ARROW_RIGHT,
-                                    jumpKey = ARROW_UP,
-                                    gamepadHorizontalAxes = arrayOf(
-                                        LEFT_STICK_HORIZONTAL_AXIS,
-                                        DPAD_HORIZONTAL_AXIS
-                                    ),
-                                    gamepadJumpButton = A
-                                )
-                            )
-                            add(JumpedSinceLastCollision())
-                        }
-                        Events.addListener(VerticalCollisionEvent, { event -> event.collider == player[Collider].collider }) {
-                            if (!player.has(Effect) && player.has(JumpedSinceLastCollision)) {
-                                player.add(
-                                    Effect(
-                                        DustEffect(
-                                            assets,
-                                            canvas,
-                                            player[Position].x + 16,
-                                            player[Position].y + 32
-                                        )
-                                    )
-                                )
-                                player.remove(JumpedSinceLastCollision)
-                            }
-                        }
-                        player
-                    }
-                    "block" -> entity {
-                        add(Position(obj.x, obj.y))
-                        add(Dimensions(obj.width, obj.height))
-                        add(Collider(RectangleCollider(
-                            get(Position)::x,
-                            get(Position)::y,
-                            get(Dimensions)::width,
-                            get(Dimensions)::height
-                        )))
-                    }
+                    "player" -> Player(obj.x, obj.y, assets, canvas)
+                    "block" -> Block(obj.x, obj.y, obj.width, obj.height)
                     else -> null
                 }
             }
@@ -123,9 +73,41 @@ class DemoScreen(private val assets: Assets) : Screen(
                 }
             }
         }
+
+        ClientboundPacket.deserializer = ClientboundPacketDeserializer()
+
+        Events.addListener(PacketReceivedEvent) { event ->
+            val packet = event.packet
+            when (packet) {
+                is ClientboundJoinPacket -> engine.add(RemotePlayer(packet.playerId, assets))
+                is ClientboundLeavePacket ->
+                    engine.entities.removeAll {
+                        it.has(RemotePlayerId)
+                                && it[RemotePlayerId].playerId == packet.playerId
+                    }
+                is ClientboundMovePacket -> engine.entities
+                    .filter {
+                        it.has(RemotePlayerId)
+                                && it[RemotePlayerId].playerId == packet.playerId
+                                && it.has(Position)
+                                && it.has(Animation)
+                    }
+                    .forEach { player ->
+                        val position = player[Position]
+                        position.x = packet.x.toDouble()
+                        position.y = packet.y.toDouble()
+                        val animation = player[Animation]
+                        if (packet.dx > 0) {
+                            animation.asset = assets.animations.catWalkRight
+                        } else if (packet.dx < 0) {
+                            animation.asset = assets.animations.catWalkLeft
+                        }
+                    }
+            }
+        }
     }
 
-    override fun onRender(dt: Double) {
+    override fun onRender() {
         ctx.clearRect(0.0, 0.0, canvas.width.toDouble(), canvas.height.toDouble())
         ctx.fillStyle = "rgb(0, 0, 0)"
         ctx.fillRect(0.0, 0.0, canvas.width.toDouble(), canvas.height.toDouble())
@@ -153,7 +135,7 @@ class DemoScreen(private val assets: Assets) : Screen(
             .filter { entity -> entity.has(Effect) }
             .forEach { entity ->
                 val particleComponent = entity[Effect]
-                particleComponent.particleEffect.onRender(dt)
+                particleComponent.particleEffect.onRender()
             }
 
         if (debug) {
