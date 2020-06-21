@@ -7,6 +7,9 @@ import uk.co.renbinden.ilse.demo.screen.DemoScreen
 @ExperimentalUnsignedTypes
 @ExperimentalStdlibApi
 fun main() {
-    App(DemoScreen(Assets()))
+    val app = App()
+    val assets = Assets()
+    val demoScreen = DemoScreen(app, assets)
+    app.screen = demoScreen
 }
 
